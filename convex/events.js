@@ -34,5 +34,70 @@ export const getEventsByLoaction = query({
       .filter((q) => q.gte(q.field("startDate", now)))
       .order("desc")
       .collect();
+
+    if (args.city) {
+      events = events.filter(
+        (e) => e.city.toLowerCase() === args.city.toLowerCase()
+      );
+    } else if (args.state) {
+      events = events.filter(
+        (e) => e.state.toLowerCase() === args.state.toLowerCase()
+      );
+    }
+
+    return events.slice(0, args.limit ?? 4);
+  },
+});
+
+export const popularEvents = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const events = ctx.db
+      .query("events")
+      .withIndex("by_start_date")
+      .filter((q) => q.gte(q.field("startDate", now)))
+      .collect();
+    const popular = events
+      .sort((a, b) => b.registrationCount - a.registrationCount)
+      .slice(0, args.limit ?? 6);
+
+    return popular;
+  },
+});
+
+export const getEventsByCategory = query({
+  args: {
+    category: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const eventsByCategory = ctx.db
+      .query("events")
+      .withIndex("by_category", (q) => q.eq("category", args.category))
+      .filter((q) => q.gte(q.field("startDate", now)))
+      .collect();
+
+    return (await eventsByCategory).slice(0, args.limit ?? 12);
+  },
+});
+
+export const getCategoryCounts = query({
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const events = ctx.db
+      .query("events")
+      .withIndex("by_category", (q) => q.eq("category", args.category))
+      .filter((q) => q.gte(q.field("startDate", now)))
+      .collect();
+
+    const counts = {};
+    events.forEach((event) => {
+      counts[event.category] = (counts[event.category] || 0) + 1;
+    });
+    return counts;
   },
 });
