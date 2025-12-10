@@ -10,6 +10,7 @@ RUN npm ci --silent
 
 # Copy source and build
 COPY . .
+COPY .env .env
 RUN npm run build
 
 # Production image
