@@ -17,6 +17,7 @@ export const getFeaturedEvents = query({
     const featured = events
       .sort((a, b) => b.registrationCount - a.registrationCount)
       .slice(0, args.limit ?? 3);
+    return featured;
   },
 });
 
@@ -28,7 +29,7 @@ export const getEventsByLoaction = query({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const events = await ctx.db
+    let events = await ctx.db
       .query("events")
       .withIndex("by_start_date")
       .filter((q) => q.gte(q.field("startDate", now)))
@@ -55,7 +56,7 @@ export const popularEvents = query({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const events = ctx.db
+    const events = await ctx.db
       .query("events")
       .withIndex("by_start_date")
       .filter((q) => q.gte(q.field("startDate", now)))
@@ -75,20 +76,20 @@ export const getEventsByCategory = query({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const eventsByCategory = ctx.db
+    const eventsByCategory = await ctx.db
       .query("events")
       .withIndex("by_category", (q) => q.eq("category", args.category))
       .filter((q) => q.gte(q.field("startDate", now)))
       .collect();
 
-    return (await eventsByCategory).slice(0, args.limit ?? 12);
+    return eventsByCategory.slice(0, args.limit ?? 12);
   },
 });
 
 export const getCategoryCounts = query({
   handler: async (ctx, args) => {
     const now = Date.now();
-    const events = ctx.db
+    const events = await ctx.db
       .query("events")
       .withIndex("by_category", (q) => q.eq("category", args.category))
       .filter((q) => q.gte(q.field("startDate", now)))
